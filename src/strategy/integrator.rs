@@ -48,3 +48,33 @@ impl<A> Strategy for Integrator<A> {
 		self.status()
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::active::{High, Low};
+
+	#[test]
+	fn update_progress() {
+		let i = Integrator::<Low>::new(NonZeroU8::new(3).unwrap());
+		assert_eq!(i.status(), Some(Status::High));
+		assert_eq!(i.update(Status::High), Some(Status::High));
+		assert_eq!(i.update(Status::Low), None);
+		assert_eq!(i.update(Status::Low), None);
+		assert_eq!(i.update(Status::Low), Some(Status::Low));
+		assert_eq!(i.update(Status::High), None);
+		assert_eq!(i.update(Status::High), None);
+		assert_eq!(i.update(Status::High), Some(Status::High));
+	}
+
+	#[test]
+	fn update_high() {
+		let i = Integrator::<High>::new(NonZeroU8::new(3).unwrap());
+		assert_eq!(i.status(), Some(Status::Low));
+	}
+	#[test]
+	fn update_low() {
+		let i = Integrator::<Low>::new(NonZeroU8::new(3).unwrap());
+		assert_eq!(i.status(), Some(Status::High));
+	}
+}
