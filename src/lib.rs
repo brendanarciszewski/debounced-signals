@@ -1,6 +1,7 @@
 //! # Debouncing Signals
 //! Use the [`Debounced`] type for this crates functionality.
 
+#![forbid(unsafe_code)]
 #![warn(clippy::cargo, clippy::cognitive_complexity)]
 #![warn(missing_docs)]
 #![no_std]
