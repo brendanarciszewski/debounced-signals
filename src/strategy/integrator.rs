@@ -1,6 +1,14 @@
 use crate::{active::Active, strategy::Strategy, Status};
 use core::{cell::Cell, marker::PhantomData, num::NonZeroU8};
 
+/// # Integrating Strategy for Debouncing
+/// Uses an integrator (counter) to determine if an input has stabilized
+///
+/// If the integrator is minimum (0), the input is stable low. If it is `max`,
+/// the input is stable high. The integrator starts as stable on the
+/// [inactive](trait@Active) value.
+///
+/// Anywhere inbetween min and max is unstable (`None`).
 pub struct Integrator<A> {
 	integrator: Cell<u8>,
 	max: NonZeroU8,
@@ -8,6 +16,9 @@ pub struct Integrator<A> {
 }
 
 impl<A: Active> Integrator<A> {
+	/// Create a new Integrator
+	///
+	/// You will likely want to compute `max = sampling_freq * min_hold_time`
 	pub fn new(max: NonZeroU8) -> Self {
 		Self {
 			integrator: Cell::new(if A::ACTIVE_VALUE == Status::Low {

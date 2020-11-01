@@ -1,8 +1,12 @@
 use core::ops::Not;
 
+/// # Input Status
+/// A newtype describing if an input is low or high
 #[derive(Debug, PartialEq, Copy, Clone)]
 pub enum Status {
+	/// `false` or `0` input
 	Low,
+	/// `true` or `1` input
 	High,
 }
 
@@ -23,6 +27,16 @@ impl From<Status> for bool {
 			true
 		} else {
 			false
+		}
+	}
+}
+
+impl From<bool> for Status {
+	fn from(val: bool) -> Self {
+		if val {
+			Status::High
+		} else {
+			Status::Low
 		}
 	}
 }

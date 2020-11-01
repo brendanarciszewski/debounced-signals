@@ -6,10 +6,17 @@ use crate::{
 	Status,
 };
 
-pub trait StateFunc: Fn() -> bool {}
-
-impl<T> StateFunc for T where T: Fn() -> bool {}
-
+/// # Debounces Input
+/// For any signal, uses the `strategy` to determine if the bit has settled.
+/// This is typically used for buttons.
+///
+/// Maintains storage of the last settled value as determined by the
+/// [`Strategy`]. The first stored value will be
+/// [`!Active::ACTIVE_VALUE`](trait@Active).
+///
+/// Most implementations of debouncing return the last stored value, which
+/// corresponds to the [`Self::get_latest`] and [`Self::is_triggered_latest`]
+/// functions.
 pub struct Debounced<A, S, F> {
 	is_bit_set_high: F,
 	strategy: S,
@@ -20,8 +27,9 @@ pub struct Debounced<A, S, F> {
 impl<A, S, F> Debounced<A, S, F>
 where
 	A: Active,
-	F: StateFunc,
+	F: Fn() -> bool,
 {
+	/// Creates a new Debounced input using any [`Strategy`]
 	pub fn new(strategy: S, is_bit_set_high: F) -> Self {
 		Self {
 			is_bit_set_high,
@@ -35,8 +43,12 @@ where
 impl<A, F> Debounced<A, strategy::Integrator<A>, F>
 where
 	A: Active,
-	F: StateFunc,
+	F: Fn() -> bool,
 {
+	/// [Convenience](strategy::Integrator::new) to create a new
+	/// integrator-debounced input
+	///
+	/// You will likely want to compute `max = sampling_freq * min_hold_time`
 	pub fn with_integrator(max: NonZeroU8, is_bit_set_high: F) -> Self {
 		Self::new(strategy::Integrator::new(max), is_bit_set_high)
 	}
@@ -45,20 +57,33 @@ where
 impl<A, S, F> Debounced<A, S, F>
 where
 	S: Strategy,
-	F: StateFunc,
+	F: Fn() -> bool,
 {
-	pub fn try_get(&self) -> Option<Status> {
-		let s = self.strategy.update(if (self.is_bit_set_high)() {
+	#[inline]
+	fn bit_set_status(&self) -> Status {
+		if (self.is_bit_set_high)() {
 			Status::High
 		} else {
 			Status::Low
-		});
+		}
+	}
+
+	/// If the `strategy` has not settled on a [`Status`], will not pick one.
+	pub fn try_get(&self) -> Option<Status> {
+		let s = self.strategy.update(self.bit_set_status());
 		if let Some(s) = s {
 			self.hysteresis.set(s);
 		}
 		s
 	}
 
+	/// If the `strategy` has not settled on a [`Status`], uses the last settled
+	/// value.
+	pub fn get_latest(&self) -> Status {
+		self.try_get().unwrap_or_else(|| self.hysteresis.get())
+	}
+
+	/// Blocks until the `strategy` has settled on a [`Status`].
 	pub fn get_blocking(&self) -> Status {
 		let mut status;
 		loop {
@@ -68,37 +93,39 @@ where
 			}
 		}
 	}
-
-	pub fn get_latest(&self) -> Status {
-		self.try_get().unwrap_or_else(|| self.hysteresis.get())
-	}
 }
 
 impl<A, S, F> Debounced<A, S, F>
 where
 	A: Active,
 	S: Strategy,
-	F: StateFunc,
+	F: Fn() -> bool,
 {
+	/// If the `strategy` has not settled on a [`Status`], uses the
+	/// [inactive](trait@Active) value.
 	pub fn get_or_unset(&self) -> Status {
 		self.try_get().unwrap_or(!A::ACTIVE_VALUE)
 	}
 
+	/// Compares [`Self::try_get`] with the value of an active input
 	pub fn try_is_triggered(&self) -> Option<bool> {
 		self.try_get().map(|s| s == A::ACTIVE_VALUE)
 	}
 
+	/// Compares [`Self::get_latest`] with the value of an active input
+	pub fn is_triggered_latest(&self) -> bool {
+		self.get_latest() == A::ACTIVE_VALUE
+	}
+
+	/// Compares [`Self::get_blocking`] with the value of an active input
+	pub fn is_triggered_blocking(&self) -> bool {
+		self.get_blocking() == A::ACTIVE_VALUE
+	}
+
+	/// Compares [`Self::get_or_unset`] with the value of an active input
 	pub fn is_triggered_or_unset(&self) -> bool {
 		self.get_or_unset() == A::ACTIVE_VALUE
 	}
-
-	pub fn is_triggered_latest(&self) -> bool {
-		self.get_latest() == A::ACTIVE_VALUE
-    }
-
-    pub fn is_triggered_blocking(&self) -> bool {
-        self.get_blocking() == A::ACTIVE_VALUE
-    }
 }
 
 #[cfg(test)]
@@ -106,73 +133,72 @@ mod tests_integrator {
 	use super::*;
 	use crate::{
 		active::{High, Low},
-		strategy::{Integrator, Shift},
 	};
 	type DbInt<F> = crate::DebouncedIntegrator<Low, F>;
 	//type DB_H_Shf<F> = Debounced<High, Shift, F>;
 
 	#[test]
 	fn low_is_triggered() {
-        let d = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || false);
-        assert_eq!(d.try_is_triggered(), None);
-        assert_eq!(d.is_triggered_or_unset(), false);
-        assert_eq!(d.is_triggered_latest(), false);
-        assert_eq!(d.try_is_triggered(), None);
-        assert_eq!(d.is_triggered_latest(), false);
-        assert_eq!(d.is_triggered_latest(), true);
-        assert_eq!(d.is_triggered_latest(), true);
-        assert_eq!(d.is_triggered_or_unset(), true);
-        assert_eq!(d.try_is_triggered(), Some(true));
-    }
+		let d = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || false);
+		assert_eq!(d.try_is_triggered(), None);
+		assert_eq!(d.is_triggered_or_unset(), false);
+		assert_eq!(d.is_triggered_latest(), false);
+		assert_eq!(d.try_is_triggered(), None);
+		assert_eq!(d.is_triggered_latest(), false);
+		assert_eq!(d.is_triggered_latest(), true);
+		assert_eq!(d.is_triggered_latest(), true);
+		assert_eq!(d.is_triggered_or_unset(), true);
+		assert_eq!(d.try_is_triggered(), Some(true));
+	}
 
-    #[test]
+	#[test]
 	fn blocking() {
-        let d = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || false);
-        assert_eq!(d.get_blocking(), Status::Low);
-        let d = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || true);
-        assert_eq!(d.get_blocking(), Status::High);
+		let d = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || false);
+		assert_eq!(d.get_blocking(), Status::Low);
+		let d = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || true);
+		assert_eq!(d.get_blocking(), Status::High);
 
-        let e = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || false);
-        assert_eq!(e.is_triggered_blocking(), true);
-        let e = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || true);
-        assert_eq!(e.is_triggered_blocking(), false);
+		let e = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || false);
+		assert_eq!(e.is_triggered_blocking(), true);
+		let e = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || true);
+		assert_eq!(e.is_triggered_blocking(), false);
 
-        let f = Debounced::<High, _, _>::with_integrator(NonZeroU8::new(6).unwrap(), || true);
-        assert_eq!(f.get_blocking(), Status::High);
-        let f = Debounced::<High, _, _>::with_integrator(NonZeroU8::new(6).unwrap(), || false);
-        assert_eq!(f.get_blocking(), Status::Low);
+		let f = Debounced::<High, _, _>::with_integrator(NonZeroU8::new(6).unwrap(), || true);
+		assert_eq!(f.get_blocking(), Status::High);
+		let f = Debounced::<High, _, _>::with_integrator(NonZeroU8::new(6).unwrap(), || false);
+		assert_eq!(f.get_blocking(), Status::Low);
 
-        let g = Debounced::<High, _, _>::with_integrator(NonZeroU8::new(6).unwrap(), || true);
-        assert_eq!(g.is_triggered_blocking(), true);
-        let g = Debounced::<High, _, _>::with_integrator(NonZeroU8::new(6).unwrap(), || false);
-        assert_eq!(g.is_triggered_blocking(), false);
-    }
+		let g = Debounced::<High, _, _>::with_integrator(NonZeroU8::new(6).unwrap(), || true);
+		assert_eq!(g.is_triggered_blocking(), true);
+		let g = Debounced::<High, _, _>::with_integrator(NonZeroU8::new(6).unwrap(), || false);
+		assert_eq!(g.is_triggered_blocking(), false);
+	}
 
-    #[test]
+	#[test]
 	fn low_status() {
-        let bit = Cell::new(false);
-        let d = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || bit.get());
-        assert_eq!(d.try_get(), None);
-        assert_eq!(d.get_or_unset(), Status::High);
-        assert_eq!(d.get_latest(), Status::High);
-        assert_eq!(d.try_get(), None);
-        assert_eq!(d.get_latest(), Status::High);
-        // next reads will all be low
-        assert_eq!(d.get_latest(), Status::Low);
-        assert_eq!(d.get_latest(), Status::Low);
-        assert_eq!(d.get_or_unset(), Status::Low);
-        assert_eq!(d.try_get(), Some(Status::Low));
+		let bit = Cell::new(false);
+		let d = DbInt::with_integrator(NonZeroU8::new(6).unwrap(), || bit.get());
+		assert_eq!(d.try_get(), None);
+		assert_eq!(d.get_or_unset(), Status::High);
+		assert_eq!(d.get_latest(), Status::High);
+		assert_eq!(d.try_get(), None);
+		assert_eq!(d.get_latest(), Status::High);
+		// next reads will all be low
+		assert_eq!(d.get_latest(), Status::Low);
+		assert_eq!(d.get_latest(), Status::Low);
+		assert_eq!(d.get_or_unset(), Status::Low);
+		assert_eq!(d.try_get(), Some(Status::Low));
 
-        bit.set(true);
-        assert_eq!(d.try_get(), None);
-        assert_eq!(d.get_or_unset(), Status::High);
-        assert_eq!(d.get_latest(), Status::Low);
-        assert_eq!(d.try_get(), None);
-        assert_eq!(d.get_latest(), Status::Low);
-        // next reads will all be high
-        assert_eq!(d.get_latest(), Status::High);
-        assert_eq!(d.get_latest(), Status::High);
-        assert_eq!(d.get_or_unset(), Status::High);
-        assert_eq!(d.try_get(), Some(Status::High));
+		bit.set(true);
+		assert_eq!(d.try_get(), None);
+		assert_eq!(d.get_or_unset(), Status::High);
+		assert_eq!(d.get_latest(), Status::Low);
+		assert_eq!(d.try_get(), None);
+		assert_eq!(d.get_latest(), Status::Low);
+		// next reads will all be high
+		assert_eq!(d.get_latest(), Status::High);
+		assert_eq!(d.get_latest(), Status::High);
+		assert_eq!(d.get_or_unset(), Status::High);
+		assert_eq!(d.try_get(), Some(Status::High));
 	}
 }
