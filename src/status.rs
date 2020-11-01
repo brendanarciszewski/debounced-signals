@@ -23,11 +23,7 @@ impl Not for Status {
 
 impl From<Status> for bool {
 	fn from(val: Status) -> Self {
-		if val == Status::High {
-			true
-		} else {
-			false
-		}
+		val == Status::High
 	}
 }
 
@@ -55,5 +51,11 @@ mod tests {
 	fn into_bool() {
 		assert_eq!(bool::from(Status::Low), false);
 		assert_eq!(bool::from(Status::High), true);
+	}
+
+	#[test]
+	fn into_status() {
+		assert_eq!(Status::from(false), Status::Low);
+		assert_eq!(Status::from(true), Status::High);
 	}
 }
