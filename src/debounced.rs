@@ -131,9 +131,7 @@ where
 #[cfg(test)]
 mod tests_integrator {
 	use super::*;
-	use crate::{
-		active::{High, Low},
-	};
+	use crate::active::{High, Low};
 	type DbInt<F> = crate::DebouncedIntegrator<Low, F>;
 	//type DB_H_Shf<F> = Debounced<High, Shift, F>;
 
