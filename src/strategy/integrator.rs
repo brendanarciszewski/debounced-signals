@@ -18,15 +18,20 @@ pub struct Integrator<A> {
 impl<A: Active> Integrator<A> {
 	/// Create a new Integrator
 	///
-	/// You will likely want to compute `max = sampling_freq * min_hold_time`
-	pub fn new(max: NonZeroU8) -> Self {
+	/// You will likely want to use [`samples`](fn@crate::samples) to compute
+	/// the distance (number of steps) between high and low inputs.
+	///
+	/// In other words, the minimum number of times
+	/// [`update`](Integrator::update) needs to be called to toggle the
+	/// integrator's output is the `distance`.
+	pub fn new(distance: NonZeroU8) -> Self {
 		Self {
 			integrator: Cell::new(if A::ACTIVE_VALUE == Status::Low {
-				max.get()
+				distance.get()
 			} else {
 				0
 			}),
-			max,
+			max: distance,
 			_a: PhantomData,
 		}
 	}

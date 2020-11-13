@@ -4,6 +4,7 @@
 ### Added
 - This CHANGELOG
 - Complete documentation (still lacking examples)
+- Add function to compute number of samples needed for a hold time
 
 ## [0.1.0] - 2020-11-01
 ### Added

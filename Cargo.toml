@@ -8,3 +8,14 @@ license = "Apache-2.0"
 repository = "https://github.com/brendanarciszewski/debounced-signals"
 documentation = "https://docs.rs/bounced"
 readme = "README.md"
+
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "samples"
+harness = false
+
+[profile.bench.build-override]
+opt-level = 3

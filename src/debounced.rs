@@ -47,8 +47,6 @@ where
 {
 	/// [Convenience](strategy::Integrator::new) to create a new
 	/// integrator-debounced input
-	///
-	/// You will likely want to compute `max = sampling_freq * min_hold_time`
 	pub fn with_integrator(max: NonZeroU8, is_bit_set_high: F) -> Self {
 		Self::new(strategy::Integrator::new(max), is_bit_set_high)
 	}
