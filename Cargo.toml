@@ -1,6 +1,6 @@
 [package]
 name = "bounced"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Brendan Arciszewski <git@brendanarciszewski.ca>"]
 edition = "2018"
 description = "Debouncing and Testing for Signals and Buttons"
