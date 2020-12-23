@@ -24,7 +24,7 @@ mod private {
 
 /// # Computes the samples
 ///
-/// Computes the number of samples which have occured at the `sample_freq` (the
+/// Computes the number of samples which have occurred at the `sample_freq` (the
 /// rate at which the input is probed in Hz) in the duration of `hold_time_ms`
 /// (in ms). If a partial sample will have occurred, rounds up.
 ///

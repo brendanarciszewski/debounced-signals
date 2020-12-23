@@ -1,5 +1,5 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use bounced::samples;
+use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
 #[inline]
 pub fn ceiling_division_by_branch(dividend: usize, divisor: usize) -> usize {
@@ -12,7 +12,7 @@ pub fn ceiling_division_by_branch(dividend: usize, divisor: usize) -> usize {
 
 #[inline]
 pub fn ceiling_division_by_cond(dividend: usize, divisor: usize) -> usize {
-	(dividend > 0) as usize  * (1 + (dividend - 1) / divisor)
+	(dividend > 0) as usize * (1 + (dividend - 1) / divisor)
 }
 
 #[inline]

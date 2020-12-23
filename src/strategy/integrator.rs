@@ -8,7 +8,7 @@ use core::{cell::Cell, marker::PhantomData, num::NonZeroU8};
 /// the input is stable high. The integrator starts as stable on the
 /// [inactive](trait@Active) value.
 ///
-/// Anywhere inbetween min and max is unstable (`None`).
+/// Anywhere in-between min and max is unstable (`None`).
 pub struct Integrator<A> {
 	integrator: Cell<u8>,
 	max: NonZeroU8,
