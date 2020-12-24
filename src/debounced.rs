@@ -18,7 +18,7 @@ use crate::{
 /// corresponds to the [`Self::get_latest`] and [`Self::is_triggered_latest`]
 /// functions.
 pub struct Debounced<A, S, F> {
-	is_bit_set_high: F,
+	is_input_high: F,
 	strategy: S,
 	hysteresis: Cell<Status>,
 	_a: PhantomData<A>,
@@ -30,9 +30,9 @@ where
 	F: Fn() -> bool,
 {
 	/// Creates a new Debounced input using any [`Strategy`]
-	pub fn new(strategy: S, is_bit_set_high: F) -> Self {
+	pub fn new(strategy: S, is_input_high: F) -> Self {
 		Self {
-			is_bit_set_high,
+			is_input_high,
 			strategy,
 			hysteresis: Cell::new(!A::ACTIVE_VALUE),
 			_a: PhantomData,
@@ -47,8 +47,8 @@ where
 {
 	/// [Convenience](strategy::Integrator::new) to create a new
 	/// integrator-debounced input
-	pub fn with_integrator(max: NonZeroU8, is_bit_set_high: F) -> Self {
-		Self::new(strategy::Integrator::new(max), is_bit_set_high)
+	pub fn with_integrator(max: NonZeroU8, is_input_high: F) -> Self {
+		Self::new(strategy::Integrator::new(max), is_input_high)
 	}
 }
 
@@ -58,8 +58,8 @@ where
 	F: Fn() -> bool,
 {
 	#[inline]
-	fn bit_set_status(&self) -> Status {
-		if (self.is_bit_set_high)() {
+	fn input_status(&self) -> Status {
+		if (self.is_input_high)() {
 			Status::High
 		} else {
 			Status::Low
@@ -68,7 +68,7 @@ where
 
 	/// If the `strategy` has not settled on a [`Status`], will not pick one.
 	pub fn try_get(&self) -> Option<Status> {
-		let s = self.strategy.update(self.bit_set_status());
+		let s = self.strategy.update(self.input_status());
 		if let Some(s) = s {
 			self.hysteresis.set(s);
 		}
