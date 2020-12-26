@@ -24,6 +24,11 @@ pub struct Debounced<A, S, F> {
 	_a: PhantomData<A>,
 }
 
+/// Convenience for [`Debounced<_, Integrator, _>`]
+pub type DebouncedIntegrator<A, F> = Debounced<A, strategy::Integrator<A>, F>;
+/// Convenience for [`Debounced<_, Shifter, _>`]
+pub type DebouncedShifter<A, T, F> = Debounced<A, strategy::Shifter<A, T>, F>;
+
 impl<A, S, F> Debounced<A, S, F>
 where
 	A: Active,
@@ -40,7 +45,7 @@ where
 	}
 }
 
-impl<A, F> Debounced<A, strategy::Integrator<A>, F>
+impl<A, F> DebouncedIntegrator<A, F>
 where
 	A: Active,
 	F: Fn() -> bool,
@@ -49,6 +54,21 @@ where
 	/// integrator-debounced input
 	pub fn with_integrator(max: NonZeroU8, is_input_high: F) -> Self {
 		Self::new(strategy::Integrator::new(max), is_input_high)
+	}
+}
+
+impl<A, F> DebouncedShifter<A, u8, F>
+where
+	A: Active,
+	F: Fn() -> bool,
+{
+	/// [Convenience](strategy::Shifter::default) to create a new
+	/// shift-debounced input
+	pub fn with_shifter<T>(is_input_high: F) -> DebouncedShifter<A, T, F>
+	where
+		T: strategy::NumericType,
+	{
+		Debounced::new(strategy::Shifter::default(), is_input_high)
 	}
 }
 
@@ -127,11 +147,11 @@ where
 }
 
 #[cfg(test)]
-mod tests_integrator {
+mod tests {
 	use super::*;
 	use crate::active::{High, Low};
-	type DbInt<F> = crate::DebouncedIntegrator<Low, F>;
-	//type DB_H_Shf<F> = Debounced<High, Shift, F>;
+	type DbInt<F> = DebouncedIntegrator<Low, F>;
+	type DbShf<T, F> = DebouncedShifter<High, T, F>;
 
 	#[test]
 	fn low_is_triggered() {
@@ -196,5 +216,20 @@ mod tests_integrator {
 		assert_eq!(d.get_latest(), Status::High);
 		assert_eq!(d.get_or_unset(), Status::High);
 		assert_eq!(d.try_get(), Some(Status::High));
+	}
+
+	#[test]
+	fn high_is_triggered() {
+		let d = DbShf::with_shifter::<u8>(|| true);
+		assert_eq!(d.try_is_triggered(), None);
+		assert_eq!(d.is_triggered_or_unset(), false);
+		assert_eq!(d.is_triggered_latest(), false);
+		assert_eq!(d.try_is_triggered(), None);
+		assert_eq!(d.is_triggered_latest(), false);
+		assert_eq!(d.is_triggered_latest(), false);
+		assert_eq!(d.is_triggered_latest(), true);
+		assert_eq!(d.is_triggered_latest(), true);
+		assert_eq!(d.is_triggered_or_unset(), true);
+		assert_eq!(d.try_is_triggered(), Some(true));
 	}
 }

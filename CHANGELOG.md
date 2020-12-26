@@ -1,6 +1,7 @@
 # Changelog
 
 ## [Unreleased]
+- Shift Type Debouncer customizable using new NumericType trait
 
 ## [0.1.1] - 2020-11-13
 ### Added

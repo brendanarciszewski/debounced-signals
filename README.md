@@ -11,7 +11,7 @@ Compared to [other](#other-projects) debouncer libraries, it is extensible with 
 debouncing algorithm.
 
 ## TODO
-- shift-type
+- const-generic-max type (built on top of shift-type)
 - random-noise type (for testing)
 
 ## Other Uses
