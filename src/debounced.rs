@@ -87,6 +87,9 @@ where
 	}
 
 	/// If the `strategy` has not settled on a [`Status`], will not pick one.
+	///
+	/// If you just want to update the status of an input (eg. in a timer
+	/// interrupt), use this function.
 	pub fn try_get(&self) -> Option<Status> {
 		let s = self.strategy.update(self.input_status());
 		if let Some(s) = s {
@@ -101,7 +104,8 @@ where
 		self.try_get().unwrap_or_else(|| self.hysteresis.get())
 	}
 
-	/// Blocks until the `strategy` has settled on a [`Status`].
+	/// Blocks until the `strategy` has settled on a [`Status`] using tight
+	/// polling.
 	pub fn get_blocking(&self) -> Status {
 		let mut status;
 		loop {

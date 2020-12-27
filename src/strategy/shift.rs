@@ -16,8 +16,8 @@ use core::cell::Cell;
 ///
 /// ## Comparison to [`Integrator`](crate::strategy::Integrator)
 /// - more coding overhead to customize the unstable zone (requires NewType)
-/// - can be more space efficient by (ab)using operator overloading since `MAX`
-///   is an associated constant, not a stored value
+/// - is more space efficient since `MAX` is an associated constant, not a
+///   stored value
 #[repr(transparent)]
 pub struct Shifter<T> {
 	reg: Cell<T>,
