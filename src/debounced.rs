@@ -123,6 +123,17 @@ where
 	S: Strategy,
 	F: Fn() -> bool,
 {
+	/// Create a Debounced input using the strategy's current status
+	pub fn with_current_strategy(strategy: S, is_input_high: F) -> Option<Self> {
+		let status = strategy.status()?;
+		Some(Self {
+			is_input_high,
+			strategy,
+			hysteresis: Cell::new(status),
+			_a: PhantomData,
+		})
+	}
+
 	/// If the `strategy` has not settled on a [`Status`], uses the
 	/// [inactive](trait@Active) value.
 	pub fn get_or_unset(&self) -> Status {
