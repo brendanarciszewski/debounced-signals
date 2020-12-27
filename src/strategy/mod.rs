@@ -34,7 +34,7 @@ pub trait Strategy {
 }
 
 /// # Types Which Are Like Integers
-/// 
+///
 /// These can `<<`, `>>`, [`==`, `>`, `<`](PartialOrd), and have a `MAX` and
 /// `MIN`, so that Shift Register Debouncing is possible.
 ///
