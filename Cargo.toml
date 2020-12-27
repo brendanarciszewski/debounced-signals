@@ -8,7 +8,8 @@ license = "Apache-2.0"
 repository = "https://github.com/brendanarciszewski/debounced-signals"
 documentation = "https://docs.rs/bounced"
 readme = "README.md"
-
+keywords = ["debounce", "debouncer", "button"]
+categories = ["embedded", "no-std"]
 
 [dev-dependencies]
 criterion = "0.3"
