@@ -5,6 +5,7 @@
 #![warn(clippy::cargo, clippy::cognitive_complexity)]
 #![warn(missing_docs)]
 #![no_std]
+#![cfg_attr(feature = "nightly", feature(min_const_generics))]
 
 mod debounced;
 mod status;
