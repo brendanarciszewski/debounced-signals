@@ -3,7 +3,7 @@ use crate::{
 	strategy::{NumericType, Strategy},
 	Status,
 };
-use core::{cell::Cell, marker::PhantomData};
+use core::cell::Cell;
 
 /// # Shift Strategy for Debouncing
 /// Uses a shift operation (counter) to determine if an input has stabilized
@@ -19,29 +19,27 @@ use core::{cell::Cell, marker::PhantomData};
 /// - can be more space efficient by (ab)using operator overloading since `MAX`
 ///   is an associated constant, not a stored value
 #[repr(transparent)]
-pub struct Shifter<A, T> {
+pub struct Shifter<T> {
 	reg: Cell<T>,
-	_a: PhantomData<A>,
 }
 
-impl<A, T> Default for Shifter<A, T>
+impl<T> Shifter<T>
 where
 	T: NumericType,
-	A: Active,
 {
-	fn default() -> Self {
+	/// Create a new Shifter
+	pub fn new<A: Active>() -> Self {
 		Self {
 			reg: Cell::new(if A::ACTIVE_VALUE == Status::Low {
 				T::MAX
 			} else {
 				T::MIN
 			}),
-			_a: PhantomData,
 		}
 	}
 }
 
-impl<A, T> Strategy for Shifter<A, T>
+impl<T> Strategy for Shifter<T>
 where
 	T: NumericType + core::fmt::Debug,
 {
@@ -78,7 +76,7 @@ mod tests {
 
 	#[test]
 	fn update_progress() {
-		let i = Shifter::<Low, u8>::default();
+		let i = Shifter::<u8>::new::<Low>();
 		assert_eq!(i.status(), Some(Status::High));
 		assert_eq!(i.update(Status::High), Some(Status::High));
 		assert_eq!(i.update(Status::Low), None);
@@ -101,12 +99,12 @@ mod tests {
 
 	#[test]
 	fn update_high() {
-		let i = Shifter::<High, u8>::default();
+		let i = Shifter::<u8>::new::<High>();
 		assert_eq!(i.status(), Some(Status::Low));
 	}
 	#[test]
 	fn update_low() {
-		let i = Shifter::<Low, u8>::default();
+		let i = Shifter::<u8>::new::<Low>();
 		assert_eq!(i.status(), Some(Status::High));
 	}
 }

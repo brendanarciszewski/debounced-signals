@@ -21,13 +21,13 @@ pub struct Debounced<A, S, F> {
 	is_input_high: F,
 	strategy: S,
 	hysteresis: Cell<Status>,
-	_a: PhantomData<A>,
+	_a: PhantomData<*const A>, // No A is owned or referenced
 }
 
 /// Convenience for [`Debounced<_, Integrator, _>`]
-pub type DebouncedIntegrator<A, F> = Debounced<A, strategy::Integrator<A>, F>;
+pub type DebouncedIntegrator<A, F> = Debounced<A, strategy::Integrator, F>;
 /// Convenience for [`Debounced<_, Shifter, _>`]
-pub type DebouncedShifter<A, T, F> = Debounced<A, strategy::Shifter<A, T>, F>;
+pub type DebouncedShifter<A, T, F> = Debounced<A, strategy::Shifter<T>, F>;
 
 impl<A, S, F> Debounced<A, S, F>
 where
@@ -53,7 +53,7 @@ where
 	/// [Convenience](strategy::Integrator::new) to create a new
 	/// integrator-debounced input
 	pub fn with_integrator(max: NonZeroU8, is_input_high: F) -> Self {
-		Self::new(strategy::Integrator::new(max), is_input_high)
+		Self::new(strategy::Integrator::new::<A>(max), is_input_high)
 	}
 }
 
@@ -68,7 +68,7 @@ where
 	where
 		T: strategy::NumericType,
 	{
-		Debounced::new(strategy::Shifter::default(), is_input_high)
+		Debounced::new(strategy::Shifter::new::<A>(), is_input_high)
 	}
 }
 

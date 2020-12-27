@@ -1,5 +1,5 @@
 use crate::{active::Active, strategy::Strategy, Status};
-use core::{cell::Cell, marker::PhantomData, num::NonZeroU8};
+use core::{cell::Cell, num::NonZeroU8};
 
 /// # Integrating Strategy for Debouncing
 /// Uses an integrator (counter) to determine if an input has stabilized
@@ -9,13 +9,12 @@ use core::{cell::Cell, marker::PhantomData, num::NonZeroU8};
 /// [inactive](trait@Active) value.
 ///
 /// Anywhere in-between min and max is unstable (`None`).
-pub struct Integrator<A> {
+pub struct Integrator {
 	integrator: Cell<u8>,
 	max: NonZeroU8,
-	_a: PhantomData<A>,
 }
 
-impl<A: Active> Integrator<A> {
+impl Integrator {
 	/// Create a new Integrator
 	///
 	/// You will likely want to use [`samples`](fn@crate::samples) to compute
@@ -24,7 +23,7 @@ impl<A: Active> Integrator<A> {
 	/// In other words, the minimum number of times
 	/// [`update`](Integrator::update) needs to be called to toggle the
 	/// integrator's output is the `distance`.
-	pub fn new(distance: NonZeroU8) -> Self {
+	pub fn new<A: Active>(distance: NonZeroU8) -> Self {
 		Self {
 			integrator: Cell::new(if A::ACTIVE_VALUE == Status::Low {
 				distance.get()
@@ -32,12 +31,11 @@ impl<A: Active> Integrator<A> {
 				0
 			}),
 			max: distance,
-			_a: PhantomData,
 		}
 	}
 }
 
-impl<A> Strategy for Integrator<A> {
+impl Strategy for Integrator {
 	fn status(&self) -> Option<Status> {
 		let i = self.integrator.get();
 		if i == 0 {
@@ -72,7 +70,7 @@ mod tests {
 
 	#[test]
 	fn update_progress() {
-		let i = Integrator::<Low>::new(NonZeroU8::new(3).unwrap());
+		let i = Integrator::new::<Low>(NonZeroU8::new(3).unwrap());
 		assert_eq!(i.status(), Some(Status::High));
 		assert_eq!(i.update(Status::High), Some(Status::High));
 		assert_eq!(i.update(Status::Low), None);
@@ -85,12 +83,12 @@ mod tests {
 
 	#[test]
 	fn update_high() {
-		let i = Integrator::<High>::new(NonZeroU8::new(3).unwrap());
+		let i = Integrator::new::<High>(NonZeroU8::new(3).unwrap());
 		assert_eq!(i.status(), Some(Status::Low));
 	}
 	#[test]
 	fn update_low() {
-		let i = Integrator::<Low>::new(NonZeroU8::new(3).unwrap());
+		let i = Integrator::new::<Low>(NonZeroU8::new(3).unwrap());
 		assert_eq!(i.status(), Some(Status::High));
 	}
 }

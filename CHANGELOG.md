@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 - Shift Type Debouncer customizable using new NumericType trait
+- use strategy Active specification from associated function instead of struct
 
 ## [0.1.1] - 2020-11-13
 ### Added
