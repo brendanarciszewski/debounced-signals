@@ -30,7 +30,7 @@ mod private {
 ///
 /// As if computing `max = sampling_freq * min_hold_time`.
 #[inline]
-pub fn samples(sample_freq: usize, hold_time_ms: usize) -> usize {
+pub const fn samples(sample_freq: usize, hold_time_ms: usize) -> usize {
 	let samples_in_1k_secs = sample_freq * hold_time_ms;
 	// ceiling division
 	if samples_in_1k_secs > 0 {
@@ -46,7 +46,8 @@ mod test_samples {
 
 	#[test]
 	fn samples_small() {
-		assert_eq!(samples(1000, 5), 5);
+		const SMPL: u8 = samples(1000, 5) as u8;
+		assert_eq!(SMPL, 5u8);
 	}
 
 	#[test]
