@@ -18,6 +18,7 @@ use core::{cell::Cell, marker::PhantomData};
 /// - more coding overhead to customize the unstable zone (requires NewType)
 /// - can be more space efficient by (ab)using operator overloading since `MAX`
 ///   is an associated constant, not a stored value
+#[repr(transparent)]
 pub struct Shifter<A, T> {
 	reg: Cell<T>,
 	_a: PhantomData<A>,
@@ -42,7 +43,7 @@ where
 
 impl<A, T> Strategy for Shifter<A, T>
 where
-	T: NumericType+core::fmt::Debug,
+	T: NumericType + core::fmt::Debug,
 {
 	fn status(&self) -> Option<Status> {
 		let reg = self.reg.get();
@@ -60,11 +61,11 @@ where
 		match status {
 			Status::Low if reg > T::MIN => {
 				self.reg.set(reg >> 1);
-			},
+			}
 			Status::High if reg < T::MAX => {
 				self.reg.set(reg << 1);
-			},
-			_ => {},
+			}
+			_ => {}
 		}
 		self.status()
 	}
