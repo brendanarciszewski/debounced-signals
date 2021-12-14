@@ -13,8 +13,8 @@ mod integrator;
 pub use integrator::Integrator;
 mod shift;
 pub use shift::Shifter;
-mod shift_generic;
-pub use shift_generic::DebouncedSmall;
+mod shift_const;
+pub use shift_const::IntegrandShifter;
 
 /// # Defining the Debouncing Algorithm
 /// The strategy needs to do everything to debounce the input, but it should not

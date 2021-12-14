@@ -9,7 +9,9 @@
 mod debounced;
 mod status;
 
-pub use debounced::{Debounced, DebouncedIntegrator, DebouncedShifter};
+pub use debounced::{
+	Debounced, DebouncedGenericShift, DebouncedIntegrandShift, DebouncedIntegrator,
+};
 pub use status::Status;
 pub mod active;
 pub mod strategy;
