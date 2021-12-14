@@ -11,9 +11,6 @@ readme = "README.md"
 keywords = ["debounce", "debouncer", "button"]
 categories = ["embedded", "no-std"]
 
-[features]
-nightly = []
-
 [dev-dependencies]
 criterion = "0.3"
 

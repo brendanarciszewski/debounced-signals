@@ -13,9 +13,7 @@ mod integrator;
 pub use integrator::Integrator;
 mod shift;
 pub use shift::Shifter;
-#[cfg(feature = "nightly")]
 mod shift_generic;
-#[cfg(feature = "nightly")]
 pub use shift_generic::DebouncedSmall;
 
 /// # Defining the Debouncing Algorithm
