@@ -1,10 +1,9 @@
-use core::{cell::Cell, marker::PhantomData, num::NonZeroU8};
-
 use crate::{
 	active::Active,
 	strategy::{self, Strategy},
 	Status,
 };
+use core::{cell::Cell, marker::PhantomData, num::NonZeroU8};
 
 /// # Debounces Input
 /// For any signal, uses the `strategy` to determine if the bit has settled.
@@ -27,7 +26,10 @@ pub struct Debounced<A, S, F> {
 /// Convenience for [`Debounced<_, Integrator, _>`]
 pub type DebouncedIntegrator<A, F> = Debounced<A, strategy::Integrator, F>;
 /// Convenience for [`Debounced<_, Shifter, _>`]
-pub type DebouncedShifter<A, T, F> = Debounced<A, strategy::Shifter<T>, F>;
+pub type DebouncedGenericShift<A, T, F> = Debounced<A, strategy::Shifter<T>, F>;
+/// Convenience for [`Debounced<_, IntegrandShifter<_>, _>`]
+pub type DebouncedIntegrandShift<A, F, const N: u8> =
+	Debounced<A, strategy::IntegrandShifter<N>, F>;
 
 impl<A, S, F> Debounced<A, S, F>
 where
@@ -57,18 +59,29 @@ where
 	}
 }
 
-impl<A, F> DebouncedShifter<A, u8, F>
+impl<A, F> DebouncedGenericShift<A, u8, F>
 where
 	A: Active,
 	F: Fn() -> bool,
 {
-	/// [Convenience](strategy::Shifter::default) to create a new
+	/// [Convenience](strategy::Shifter::new) to create a new
 	/// shift-debounced input
-	pub fn with_shifter<T>(is_input_high: F) -> DebouncedShifter<A, T, F>
+	pub fn with_shifter<T>(is_input_high: F) -> DebouncedGenericShift<A, T, F>
 	where
 		T: strategy::NumericType,
 	{
 		Debounced::new(strategy::Shifter::new::<A>(), is_input_high)
+	}
+}
+
+impl<A, F, const N: u8> DebouncedIntegrandShift<A, F, N>
+where
+	A: Active,
+	F: Fn() -> bool,
+{
+	/// Create a new integration-debounced input with no size-overhead
+	pub fn with(is_input_high: F) -> Self {
+		Self::new(strategy::Shifter::new::<A>(), is_input_high)
 	}
 }
 
@@ -166,7 +179,7 @@ mod tests {
 	use super::*;
 	use crate::active::{High, Low};
 	type DbInt<F> = DebouncedIntegrator<Low, F>;
-	type DbShf<T, F> = DebouncedShifter<High, T, F>;
+	type DbShf<T, F> = DebouncedGenericShift<High, T, F>;
 
 	#[test]
 	fn low_is_triggered() {
