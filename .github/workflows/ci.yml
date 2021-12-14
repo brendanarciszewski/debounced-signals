@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        components: rustfmt, clippy
+    - run: cargo fmt --all -- --check
+      if: always()
+    - run: cargo clippy --workspace --all-targets --all-features
+      if: always()
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+        profile: minimal
+        components: llvm-tools-preview
+    - name: install cargo-llvm-cov
+      # run: cargo install cargo-llvm-cov #cargo-binutils rustfilt
+      run: |
+          host=$(rustc -Vv | grep host | sed 's/host: //')
+          curl -fsSL https://github.com/taiki-e/cargo-llvm-cov/releases/download/v${CARGO_LLVM_COV_VERSION}/cargo-llvm-cov-"$host".tar.gz | tar xzf - -C ~/.cargo/bin
+      env:
+        CARGO_LLVM_COV_VERSION: 0.1.12
+    - name: Test & Create Coverage
+      run: cargo llvm-cov --workspace --all-targets --all-features --no-fail-fast --lcov --output-path lcov.info
+    - name: Upload to Coveralls
+      uses: coverallsapp/github-action@v1.1.2
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        path-to-lcov: lcov.info
+        flag-name: "Unit"
+    - name: Upload to Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        files: lcov.info
+        flags: "Unit"
